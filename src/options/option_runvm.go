@@ -10,15 +10,21 @@ import (
 	"carrierpigeondev/machv/src/lib"
 )
 
-func OptionLaunchVirtualMachineFromUsableQCOW2(disksDir *pathlib.Path) {
+func OptionLaunchVirtualMachineFromUsableQCOW2(disksDir *pathlib.Path, sharePath *pathlib.Path) {
 	log.Info("Loading all usable virtual machine disks...")
 	diskPath := lib.SelectDisk(disksDir)
-	_launchVM(diskPath)
 
+
+	runWithDir := lib.SelectOption([]string { "No", "Yes" }, fmt.Sprintf("Share %v with virtual machine?", sharePath))
+	if runWithDir == "Yes" {
+		_launchVM(diskPath, fmt.Sprintf("-virtfs local,path=%v,mount_tag=host0,security_model=mapped,id=host0", sharePath))
+	} else {
+		_launchVM(diskPath, "")
+	}
 }
 
-func _launchVM(diskPath *pathlib.Path) {
-	qemuRunCmd := fmt.Sprintf("qemu-system-x86_64 -%v -hda %v -boot a", lib.QemuGlobalArgs, diskPath)
+func _launchVM(diskPath *pathlib.Path, extraArgs string) {
+	qemuRunCmd := fmt.Sprintf("qemu-system-x86_64 -%v -hda %v -boot a %v", lib.QemuGlobalArgs, diskPath, extraArgs)
 	cmd := exec.Command("bash", "-c", qemuRunCmd)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout

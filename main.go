@@ -18,8 +18,11 @@ var (
 	disksDir  	*pathlib.Path
 	staticDir 	*pathlib.Path
 	configDir 	*pathlib.Path
+
 	isoTomlPath *pathlib.Path
-	cfgTomlPath *pathlib.Path
+	//cfgTomlPath *pathlib.Path
+
+	sharePath   *pathlib.Path
 )
 
 func init() {
@@ -37,14 +40,15 @@ func init() {
 	disksDir = mainDir.Join("disks")
 	staticDir = mainDir.Join("static")
 	configDir = pathlib.NewPath(userHome).Join(".config", "machv")
+	sharePath = mainDir.Join("vmshare")
 
 	isoTomlPath = configDir.Join("iso.toml")
-	cfgTomlPath = configDir.Join("cfg.toml")
+	//cfgTomlPath = configDir.Join("cfg.toml")
 }
 
 func initializeDirectories() {
 	// loop over globals and do logging
-	for _, dir := range []*pathlib.Path{mainDir, isoDir, disksDir, configDir} {
+	for _, dir := range []*pathlib.Path{mainDir, isoDir, disksDir, configDir, sharePath} {
 		log.WithField("dir", dir).Debug("Checking dir if it exists")
 		doesExist, err := dir.Exists()
 		if err != nil {
@@ -118,7 +122,7 @@ func main() {
 		// success cases
 		case 0: options.OptionCreateNewStaticQCOW2(staticDir, isoTomlPath, isoDir)
 		case 1: options.OptionCreateNewUsableQCOW2(staticDir, disksDir)
-		case 2: options.OptionLaunchVirtualMachineFromUsableQCOW2(disksDir)
+		case 2: options.OptionLaunchVirtualMachineFromUsableQCOW2(disksDir, sharePath)
 
 		// error cases
 		case -1: log.Error("invalid verb")
