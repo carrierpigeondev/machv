@@ -12,12 +12,14 @@ import (
 )
 
 var (
-	userHome  string
-	mainDir   *pathlib.Path
-	isoDir    *pathlib.Path
-	disksDir  *pathlib.Path
-	staticDir *pathlib.Path
-	configDir *pathlib.Path
+	userHome  	string
+	mainDir   	*pathlib.Path
+	isoDir    	*pathlib.Path
+	disksDir  	*pathlib.Path
+	staticDir 	*pathlib.Path
+	configDir 	*pathlib.Path
+	isoTomlPath *pathlib.Path
+	cfgTomlPath *pathlib.Path
 )
 
 func init() {
@@ -35,6 +37,9 @@ func init() {
 	disksDir = mainDir.Join("disks")
 	staticDir = mainDir.Join("static")
 	configDir = pathlib.NewPath(userHome).Join(".config", "machv")
+
+	isoTomlPath = configDir.Join("iso.toml")
+	cfgTomlPath = configDir.Join("cfg.toml")
 }
 
 func initializeDirectories() {
@@ -111,7 +116,7 @@ func main() {
 	
 	switch opt {
 		// success cases
-		case 0: options.OptionCreateNewStaticQCOW2(staticDir, isoDir)
+		case 0: options.OptionCreateNewStaticQCOW2(staticDir, isoTomlPath, isoDir)
 		case 1: options.OptionCreateNewUsableQCOW2(staticDir, disksDir)
 		case 2: options.OptionLaunchVirtualMachineFromUsableQCOW2(disksDir)
 

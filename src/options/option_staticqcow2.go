@@ -2,32 +2,33 @@ package options
 
 import (
 	"bufio"
-	"os"
-	log "github.com/sirupsen/logrus"
-	"github.com/chigopher/pathlib"
-	"strings"
 	"fmt"
+	"os"
 	"os/exec"
+	"strings"
+
+	"github.com/chigopher/pathlib"
+	log "github.com/sirupsen/logrus"
 
 	"carrierpigeondev/machv/src/lib"
 )
 
-func OptionCreateNewStaticQCOW2(staticDir *pathlib.Path, isoDir *pathlib.Path) {
-	reader := bufio.NewReader(os.Stdin)
+func OptionCreateNewStaticQCOW2(staticDir *pathlib.Path, isoTomlPath *pathlib.Path, isoDir *pathlib.Path) {
+	isoPath := _selectISO(isoTomlPath, isoDir)  // does not return error as errors are handled inside the function
 
+	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter name:\n(.qcow2 extension is added automatically)\n\n$ ")
 	diskName, err := reader.ReadString('\n')
 	if err != nil {
 		log.WithError(err).WithField("diskName", diskName).Fatal("A fatal error has occurred while reading diskName from stdin")
 	}
 	diskName = strings.TrimSpace(diskName)
-
 	diskPath := _createStaticQCOW2(staticDir, diskName, 20480) // does not return error as errors are handled inside the function
-	isoPath := _selectISO(isoDir) // does not return error as errors are handled inside the function
+
 	_createVM(diskPath, isoPath)
 }
 
-func _createStaticQCOW2(staticDir *pathlib.Path, name string, sizeMiB int) (*pathlib.Path) {
+func _createStaticQCOW2(staticDir *pathlib.Path, name string, sizeMiB int) *pathlib.Path {
 	// use a uuid as the base of a qcow2 file to ensure it's unique and create a path
 	uniqueFileName := fmt.Sprintf("%v.qcow2", name)
 	uniqueDiskPath := staticDir.Join(uniqueFileName)
@@ -49,11 +50,17 @@ func _createStaticQCOW2(staticDir *pathlib.Path, name string, sizeMiB int) (*pat
 	return uniqueDiskPath
 }
 
-func _selectISO(isoDir *pathlib.Path) (*pathlib.Path) {
-	// TEMP: no interaction, hardcoding it for now
-	// eventually I want to make a dict that is hosted with isos and associated urls
-	isoName := "debian-12.11.0-amd64-netinst.iso"
-	url := "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.11.0-amd64-netinst.iso"
+func _selectISO(isoTomlPath *pathlib.Path, isoDir *pathlib.Path) *pathlib.Path {
+
+	allIsos, err := lib.ParseIsoTomlToIsoEntrySlice(isoTomlPath)
+	if err != nil {
+		log.WithError(err).WithField("isoTomlPath", isoTomlPath).Fatal("A fatal error has occurred while parsing isoTomlPath to iso entries")
+	}
+
+	chosenIso := lib.SelectOption(allIsos, "ISOs:")
+
+	url := chosenIso.Url
+	isoName := chosenIso.FriendlyName()
 
 	isoPath := isoDir.Join(isoName)
 	doesExist, err := isoPath.Exists()
@@ -81,7 +88,9 @@ func _selectISO(isoDir *pathlib.Path) (*pathlib.Path) {
 }
 
 func _createVM(uniqueDiskPath *pathlib.Path, isoPath *pathlib.Path) {
+	log.WithField("isoPath", isoPath).Info("::LOOK::")
 	qemuCreateCmd := fmt.Sprintf("qemu-system-x86_64 %v -hda %v -boot d -cdrom %v", lib.QemuGlobalArgs, uniqueDiskPath, isoPath)
+	log.WithField("isoPath", qemuCreateCmd).Info("::LOOK::")
 	cmd := exec.Command("bash", "-c", qemuCreateCmd)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
