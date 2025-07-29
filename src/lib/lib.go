@@ -13,10 +13,10 @@ import (
 	"errors"
 )
 
-func ReadDisksInDirectory(dir *pathlib.Path) ([]*pathlib.Path) {
+func ReadFilesInDirectory(dir *pathlib.Path) ([]*pathlib.Path) {
 	disks, err := dir.ReadDir()
 	if err != nil {
-		log.WithError(err).WithField("dir", dir).Fatal("A fatal error has occurred while reading directory for disks")
+		log.WithError(err).WithField("dir", dir).Fatal("A fatal error has occurred while reading directory for files")
 	}
 
 	return disks
@@ -50,10 +50,14 @@ func SelectOption[T any](options []T, promptText string) (T) {
 }
 
 func SelectDisk(dir *pathlib.Path) (*pathlib.Path) {
-	disks := ReadDisksInDirectory(dir)
-	chosenDisk := SelectOption(disks, "Disks:")
+	return SelectFile(dir, "Disks:")
+}
 
-	log.WithField("chosenDisk", chosenDisk).Info("Chose disk")
+func SelectFile(dir *pathlib.Path, promptText string) (*pathlib.Path) {
+	disks := ReadFilesInDirectory(dir)
+	chosenFile := SelectOption(disks, promptText)
 
-	return chosenDisk
+	log.WithField("chosenFile", chosenFile).Info("Chose file")
+
+	return chosenFile
 }

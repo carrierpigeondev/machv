@@ -1,11 +1,13 @@
 package options
 
 import (
-	log "github.com/sirupsen/logrus"
-	"github.com/chigopher/pathlib"
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
+
+	"github.com/chigopher/pathlib"
+	log "github.com/sirupsen/logrus"
 
 	"carrierpigeondev/machv/src/lib"
 )
@@ -14,17 +16,25 @@ func OptionLaunchVirtualMachineFromUsableQCOW2(disksDir *pathlib.Path, sharePath
 	log.Info("Loading all usable virtual machine disks...")
 	diskPath := lib.SelectDisk(disksDir)
 
+	var extraArgs string
 
 	runWithDir := lib.SelectOption([]string { "No", "Yes" }, fmt.Sprintf("Share %v with virtual machine?", sharePath))
 	if runWithDir == "Yes" {
-		_launchVM(diskPath, fmt.Sprintf("-virtfs local,path=%v,mount_tag=host0,security_model=mapped,id=host0", sharePath))
-	} else {
-		_launchVM(diskPath, "")
+		extraArgs = strings.Join([]string{ extraArgs, fmt.Sprintf("-virtfs local,path=%v,mount_tag=host0,security_model=mapped,id=host0", sharePath) }, " ")
 	}
+
+	runWithSpice := lib.SelectOption([]string { "No", "Yes" }, "Run with spice?")
+	if runWithSpice == "Yes" {
+		extraArgs = strings.Join([]string{ extraArgs, "-spice port=3001,disable-ticketing=on -device virtio-serial-pci -chardev spicevmc,id=vdagent,name=vdagent -device virtserialport,chardev=vdagent,name=com.redhat.spice.0" }, " ")
+	}
+
+	log.WithFields(log.Fields{ "diskPath": diskPath, "extraArgs": extraArgs }).Info("Observe the diskPath and extraArgs")
+	_launchVM(diskPath, extraArgs)
 }
 
 func _launchVM(diskPath *pathlib.Path, extraArgs string) {
 	qemuRunCmd := fmt.Sprintf("qemu-system-x86_64 -%v -hda %v -boot a %v", lib.QemuGlobalArgs, diskPath, extraArgs)
+	log.WithField("qemuRunCmd", qemuRunCmd).Info("Running qemu with the following command")
 	cmd := exec.Command("bash", "-c", qemuRunCmd)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
