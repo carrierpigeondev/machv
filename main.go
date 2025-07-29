@@ -79,11 +79,11 @@ func main() {
             "Create new usable virtual machine disk",
             "Load virtual machine disk",
         }
-		lib.DisplayOptions(selectOptions, "Options:")
+        lib.DisplayOptions(selectOptions, "Options:")
         iopt, err := lib.SelectOption(selectOptions)
-		if err != nil {
-			log.WithError(err).Fatal("fatal while selecting options")
-		}
+        if err != nil {
+            log.WithError(err).Fatal("fatal while selecting options")
+        }
 
         switch iopt {
             case "Create new static virtual machine disk": opt = 0
@@ -122,7 +122,7 @@ func main() {
         }
     }
     
-	var eErr error = nil
+    var eErr error = nil
     switch opt {
         // success cases
         case 0: eErr = options.OptionCreateNewStaticQCOW2(staticDir, isoTomlPath, isoDir)
@@ -135,7 +135,7 @@ func main() {
         case -3: log.Error("invalid noun for 'create'")
     }
 
-	if eErr != nil {
-		log.WithError(eErr).Fatal("fatal while executing option")
-	}
+    if eErr != nil {
+        log.WithError(eErr).Fatal("fatal while executing option")
+    }
 }

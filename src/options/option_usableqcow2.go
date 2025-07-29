@@ -1,67 +1,56 @@
 package options
 
 import (
-    log "github.com/sirupsen/logrus"
-    "github.com/chigopher/pathlib"
-    "bufio"
-    "os"
-    "fmt"
-    "strings"
-    "errors"
+	"errors"
+	"fmt"
+	"os"
 
-    "carrierpigeondev/machv/src/lib"
+	"github.com/chigopher/pathlib"
+	log "github.com/sirupsen/logrus"
+
+	"carrierpigeondev/machv/src/lib"
 )
 
 func OptionCreateNewUsableQCOW2(staticDir *pathlib.Path, disksDir *pathlib.Path) (error) {
-    reader := bufio.NewReader(os.Stdin)
-
     log.Info("Loading all static virtual machine disks...")
 
-	disks, err := lib.ReadFilesInDirectory(staticDir)
-	if err != nil {
-		return fmt.Errorf("reading disks from dir: %w", err)
-	}
-
-	lib.DisplayOptions(disks, "Static disks:")
-    diskPath, err := lib.SelectOption(disks)
-	if err != nil {
-		return fmt.Errorf("selecting disk path: %w", err)
-	}
-
-    fmt.Print("Enter name for new usable virtual machine disk:\n(Make sure to include .qcow2 at the end)\n\n$ ")
-    diskName, err := reader.ReadString('\n')
+    disks, err := lib.ReadFilesInDirectory(staticDir)
     if err != nil {
-        log.WithError(err).WithField("diskName", diskName).Fatal("A fatal error has occurred while reading diskName from stdin")
-    }
-    diskName = strings.TrimSpace(diskName)
-    if !strings.HasSuffix(diskName, ".qcow2") {
-        log.WithError(errors.New("name does not end with .qcow2")).WithField("diskName", diskName).Fatal("A fatal error has occurred while validating disName")
+        return fmt.Errorf("reading disks from dir: %w", err)
     }
 
-    _createUsableQCOW2(disksDir, diskPath, diskName)
+    lib.DisplayOptions(disks, "Static disks:")
+    staticDiskPath, err := lib.SelectOption(disks)
+    if err != nil {
+        return fmt.Errorf("selecting disk path: %w", err)
+    }
 
-	return nil
+    diskName, err := lib.GetInput("Enter name for new usable machine disk: ")
+    if err != nil {
+        return fmt.Errorf("getting usable disk name: %w", err)
+    }
+
+    usableDiskPath := lib.CreateDiskPath(diskName, disksDir)
+
+    if err := _createUsableQCOW2(staticDiskPath, usableDiskPath); err != nil {
+        return fmt.Errorf("creating usable qcow2: %w", err)
+    }
+
+    return nil
 }
 
-func _createUsableQCOW2(disksDir *pathlib.Path, staticDiskPath *pathlib.Path, diskName string) {
-    bytesInStaticDiskPath, err := staticDiskPath.Size()
+func _createUsableQCOW2(
+    staticDiskPath *pathlib.Path,
+    usableDiskPath *pathlib.Path,
+) (error) {
+    doesExist, err := usableDiskPath.Exists()
     if err != nil {
-        log.WithError(err).Error("A non-fatal error has occurred while getting bytes in staticDiskPath")
-        bytesInStaticDiskPath = 0
-    }
-
-    newDiskPath := disksDir.Join(diskName)
-    log.WithFields(log.Fields{"staticDiskPath": staticDiskPath, "newDiskPath": newDiskPath}).Info("Copying staticDiskPath to newDiskPath")
-
-    doesExist, err := newDiskPath.Exists()
-    if err != nil {
-        log.WithError(err).WithField("path", newDiskPath).Fatal("A fatal error has occurred while checking path")
+        return fmt.Errorf("checking is disk exists: %w", err)
     } else if doesExist {
-        log.WithError(errors.New("file already exists")).Fatal("A fatal error has occurred while checling if the specified newDiskPath already exists")
+        return fmt.Errorf("usable disk already exists")
     }
 
-    bytesCopied, err := staticDiskPath.Copy(newDiskPath)
-    if err != nil {
+    if _, err := staticDiskPath.Copy(newDiskPath); err != nil {
         log.WithError(err).WithFields(log.Fields{"staticDiskPath": staticDiskPath, "newDiskPath": newDiskPath}).Fatal("A fatal error has occurred while copying staticDiskPath to newDiskPath")
     }
 

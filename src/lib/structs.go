@@ -9,7 +9,7 @@ type IsoToml struct {
 }
 
 type IsoEntry struct {
-    Url string
+    Url  string
 }
 
 func (iso IsoEntry) FriendlyName() (string) {
