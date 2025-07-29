@@ -12,12 +12,21 @@ import (
     "carrierpigeondev/machv/src/lib"
 )
 
-func OptionCreateNewUsableQCOW2(staticDir *pathlib.Path, disksDir *pathlib.Path) {
+func OptionCreateNewUsableQCOW2(staticDir *pathlib.Path, disksDir *pathlib.Path) (error) {
     reader := bufio.NewReader(os.Stdin)
 
     log.Info("Loading all static virtual machine disks...")
 
-    diskPath := lib.SelectDisk(staticDir)
+	disks, err := lib.ReadFilesInDirectory(staticDir)
+	if err != nil {
+		return fmt.Errorf("reading disks from dir: %w", err)
+	}
+
+	lib.DisplayOptions(disks, "Static disks:")
+    diskPath, err := lib.SelectOption(disks)
+	if err != nil {
+		return fmt.Errorf("selecting disk path: %w", err)
+	}
 
     fmt.Print("Enter name for new usable virtual machine disk:\n(Make sure to include .qcow2 at the end)\n\n$ ")
     diskName, err := reader.ReadString('\n')
@@ -30,6 +39,8 @@ func OptionCreateNewUsableQCOW2(staticDir *pathlib.Path, disksDir *pathlib.Path)
     }
 
     _createUsableQCOW2(disksDir, diskPath, diskName)
+
+	return nil
 }
 
 func _createUsableQCOW2(disksDir *pathlib.Path, staticDiskPath *pathlib.Path, diskName string) {

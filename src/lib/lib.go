@@ -1,63 +1,69 @@
 package lib
 
 import (
-    "bufio"
+	"bufio"
     "os"
-
+	
     "github.com/chigopher/pathlib"
-    log "github.com/sirupsen/logrus"
-
+    
     "fmt"
     "strings"
     "strconv"
-    "errors"
 )
 
-func ReadFilesInDirectory(dir *pathlib.Path) ([]*pathlib.Path) {
+func ReadFilesInDirectory(dir *pathlib.Path) ([]*pathlib.Path, error) {
     disks, err := dir.ReadDir()
-    if err != nil {
-        log.WithError(err).WithField("dir", dir).Fatal("A fatal error has occurred while reading directory for files")
+	if err != nil {
+		return nil, fmt.Errorf("reading %q: %w", dir, err)
     }
-
-    return disks
+    return disks, nil
 }
 
-func SelectOption[T any](options []T, promptText string) (T) {
-    reader := bufio.NewReader(os.Stdin)
-
-    fmt.Println(promptText)
-
+func DisplayOptions[T any](options []T, promptText string) {
+	fmt.Println(promptText)
     for i, option := range options {
         fmt.Printf("  %v) %v\n", i, option)
     }
     fmt.Print("\n$ ")
+}
+
+func DisplayBool(promptText string) {
+	DisplayOptions([]string { "No", "Yes" }, promptText)
+}
+
+func SelectBool() (bool, error) {
+	choice, err := SelectOption([]string { "No", "Yes" })
+	if err != nil {
+		return false, fmt.Errorf("selecting bool: %w", err)
+	}
+
+	switch choice {
+		case "No":
+			return false, nil
+		case "Yes":
+			return true, nil
+	}
+
+	return false, fmt.Errorf("returned other than No, Yes: %v", choice)
+}
+
+func SelectOption[T any](options []T) (T, error) {
+    reader := bufio.NewReader(os.Stdin)
+	var zero T
     
     optionIndexString, err := reader.ReadString('\n')
     if err != nil {
-        log.WithError(err).WithField("optionIndexString", optionIndexString).Fatal("A fatal error has occurred while reading option")
-    }
+		return zero, fmt.Errorf("reading option: %w", err)
+	}
     optionIndexString = strings.TrimSpace(optionIndexString)
 
     optionIndex, err := strconv.Atoi(optionIndexString)
     if err != nil {
-        log.WithError(err).WithField("optionIndexString", optionIndexString).Fatal("A fatal error has occurred while converting optionIndexString to integer optionIndex")
+		return zero, fmt.Errorf("converting %v to int: %w", optionIndex, err)
     }
     if optionIndex < 0 || optionIndex >= len(options) {
-        log.WithError(errors.New("index out of range")).Fatal("A fatal error has occurred while validating optionIndex")
+		return zero, fmt.Errorf("index %v out of range", optionIndex)
     }
 
-    return options[optionIndex]
-}
-
-func SelectDisk(dir *pathlib.Path) (*pathlib.Path) {
-    return SelectFile(dir, "Disks:")
-}
-
-func SelectFile(dir *pathlib.Path, promptText string) (*pathlib.Path) {
-    disks := ReadFilesInDirectory(dir)
-    chosenFile := SelectOption(disks, promptText)
-
-    log.WithField("chosenFile", chosenFile).Info("Chose file")
-
-    return chosenFile
+    return options[optionIndex], nil
 }

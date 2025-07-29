@@ -13,8 +13,11 @@ import (
     "carrierpigeondev/machv/src/lib"
 )
 
-func OptionCreateNewStaticQCOW2(staticDir *pathlib.Path, isoTomlPath *pathlib.Path, isoDir *pathlib.Path) {
-    isoPath := _selectISO(isoTomlPath, isoDir)  // does not return error as errors are handled inside the function
+func OptionCreateNewStaticQCOW2(staticDir *pathlib.Path, isoTomlPath *pathlib.Path, isoDir *pathlib.Path) (error) {
+    isoPath, err := _selectISO(isoTomlPath, isoDir)
+	if err != nil {
+		return fmt.Errorf("selecting iso path: %w", err)
+	}
 
     reader := bufio.NewReader(os.Stdin)
     fmt.Print("Enter name:\n(.qcow2 extension is added automatically)\n\n$ ")
@@ -26,6 +29,8 @@ func OptionCreateNewStaticQCOW2(staticDir *pathlib.Path, isoTomlPath *pathlib.Pa
     diskPath := _createStaticQCOW2(staticDir, diskName, 20480) // does not return error as errors are handled inside the function
 
     _createVM(diskPath, isoPath)
+
+	return nil
 }
 
 func _createStaticQCOW2(staticDir *pathlib.Path, name string, sizeMiB int) *pathlib.Path {
@@ -50,14 +55,18 @@ func _createStaticQCOW2(staticDir *pathlib.Path, name string, sizeMiB int) *path
     return uniqueDiskPath
 }
 
-func _selectISO(isoTomlPath *pathlib.Path, isoDir *pathlib.Path) *pathlib.Path {
+func _selectISO(isoTomlPath *pathlib.Path, isoDir *pathlib.Path) (*pathlib.Path, error) {
 
     allIsos, err := lib.ParseIsoTomlToIsoEntrySlice(isoTomlPath)
     if err != nil {
-        log.WithError(err).WithField("isoTomlPath", isoTomlPath).Fatal("A fatal error has occurred while parsing isoTomlPath to iso entries")
-    }
+		return nil, fmt.Errorf("parsing %v to entries: %w", isoTomlPath, err)
+	}
 
-    chosenIso := lib.SelectOption(allIsos, "ISOs:")
+	lib.DisplayOptions(allIsos, "ISOs:")
+    chosenIso, err := lib.SelectOption(allIsos)
+	if err != nil {
+		return nil, fmt.Errorf("selecting option: %w", err)
+	}
 
     url := chosenIso.Url
     isoName := chosenIso.FriendlyName()
@@ -65,7 +74,7 @@ func _selectISO(isoTomlPath *pathlib.Path, isoDir *pathlib.Path) *pathlib.Path {
     isoPath := isoDir.Join(isoName)
     doesExist, err := isoPath.Exists()
     if err != nil {
-        log.WithError(err).WithField("path", isoPath).Fatal("A fatal error has occurred while checking path")
+		return nil, fmt.Errorf("checking path %v: %w", isoPath, err)
     } else if !doesExist {
         // download the iso since it does not exist
         curlCmdString := fmt.Sprintf("curl -LO %v", url)
@@ -78,13 +87,13 @@ func _selectISO(isoTomlPath *pathlib.Path, isoDir *pathlib.Path) *pathlib.Path {
         cmd.Stdout = os.Stdout
         cmd.Stdin = os.Stdin
         if err := cmd.Run(); err != nil {
-            log.WithError(err).Fatal("A fatal error has occurred while downloading iso")
+			return nil, fmt.Errorf("downloading iso: %w", err)
         }
     } else {
         log.Info("Requested iso already exists")
     }
 
-    return isoPath
+    return isoPath, nil
 }
 
 func _createVM(uniqueDiskPath *pathlib.Path, isoPath *pathlib.Path) {
