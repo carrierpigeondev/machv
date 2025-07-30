@@ -46,7 +46,7 @@ func OptionCreateNewStaticQCOW2(
 
     wantedDiskPath := lib.CreateDiskPath(diskName, staticDir)
 
-    staticDiskPath, err := _createStaticQCOW2(wantedDiskPath, 20480)
+    staticDiskPath, err := lib.CreateStaticQCOW2(wantedDiskPath, 20480)
     if err != nil {
         return fmt.Errorf("creating static qcwo2: %w", err)
     }
@@ -56,28 +56,6 @@ func OptionCreateNewStaticQCOW2(
     return nil
 }
 
-func _createStaticQCOW2(
-    diskPath *pathlib.Path,
-    sizeMiB int,
-) (*pathlib.Path, error) {
-    qemuImgCmdString := fmt.Sprintf(
-        "qemu-img create -f qcow2 %v %vM",
-        diskPath,
-        sizeMiB,
-    )
-    log.WithField("command", qemuImgCmdString).
-        Info("Assembled command to create disk with qemu-img")
-
-    cmd := exec.Command("bash", "-c", qemuImgCmdString)
-    cmd.Stderr = os.Stderr
-    cmd.Stdout = os.Stdout
-    cmd.Stdin = os.Stdin
-    if err := cmd.Run(); err != nil {
-        return nil, fmt.Errorf("running qemu-img command: %w", err)
-    }
-
-    return diskPath, nil
-}
 
 func _createVM(uniqueDiskPath *pathlib.Path, isoPath *pathlib.Path) {
     log.WithField("isoPath", isoPath).Info("::LOOK::")

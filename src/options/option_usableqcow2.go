@@ -1,17 +1,17 @@
 package options
 
 import (
-	"errors"
 	"fmt"
-	"os"
-
 	"github.com/chigopher/pathlib"
 	log "github.com/sirupsen/logrus"
 
 	"carrierpigeondev/machv/src/lib"
 )
 
-func OptionCreateNewUsableQCOW2(staticDir *pathlib.Path, disksDir *pathlib.Path) (error) {
+func OptionCreateNewUsableQCOW2(
+    staticDir *pathlib.Path,
+    disksDir *pathlib.Path,
+) (error) {
     log.Info("Loading all static virtual machine disks...")
 
     disks, err := lib.ReadFilesInDirectory(staticDir)
@@ -32,17 +32,6 @@ func OptionCreateNewUsableQCOW2(staticDir *pathlib.Path, disksDir *pathlib.Path)
 
     usableDiskPath := lib.CreateDiskPath(diskName, disksDir)
 
-    if err := _createUsableQCOW2(staticDiskPath, usableDiskPath); err != nil {
-        return fmt.Errorf("creating usable qcow2: %w", err)
-    }
-
-    return nil
-}
-
-func _createUsableQCOW2(
-    staticDiskPath *pathlib.Path,
-    usableDiskPath *pathlib.Path,
-) (error) {
     doesExist, err := usableDiskPath.Exists()
     if err != nil {
         return fmt.Errorf("checking is disk exists: %w", err)
@@ -50,15 +39,10 @@ func _createUsableQCOW2(
         return fmt.Errorf("usable disk already exists")
     }
 
-    if _, err := staticDiskPath.Copy(newDiskPath); err != nil {
-        log.WithError(err).WithFields(log.Fields{"staticDiskPath": staticDiskPath, "newDiskPath": newDiskPath}).Fatal("A fatal error has occurred while copying staticDiskPath to newDiskPath")
-    }
-
-    bytesInNewDiskPath, err := staticDiskPath.Size()
+    err = lib.CreateUsableQCOW2(staticDiskPath, usableDiskPath)
     if err != nil {
-        log.WithError(err).Error("A non-fatal error has occurred while getting bytes in newDiskPath")
-        bytesInNewDiskPath = 0
+        return fmt.Errorf("creating usable qcow2: %w", err)
     }
 
-    log.WithFields(log.Fields{"bytesInStaticDiskPath": bytesInStaticDiskPath, "bytesCopied": bytesCopied, "bytesInNewDiskPath": bytesInNewDiskPath}).Info("Copied staticDiskPath to newDiskPath and logged number of bytes in both locations and transfer")
+    return nil
 }
