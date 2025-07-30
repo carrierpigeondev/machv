@@ -50,10 +50,10 @@ func SelectBool() (bool, error) {
     }
 
     switch choice {
-        case "No":
-            return false, nil
-        case "Yes":
-            return true, nil
+    case "No":
+        return false, nil
+    case "Yes":
+        return true, nil
     }
 
     return false, fmt.Errorf("returned other than No, Yes: %v", choice)

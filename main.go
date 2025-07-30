@@ -48,7 +48,13 @@ func init() {
 
 func initializeDirectories() {
     // loop over globals and do logging
-    for _, dir := range []*pathlib.Path{mainDir, isoDir, disksDir, configDir, sharePath} {
+    for _, dir := range []*pathlib.Path{
+        mainDir,
+        isoDir,
+        disksDir,
+        configDir,
+        sharePath,
+    }{
         log.WithField("dir", dir).Debug("Checking dir if it exists")
         doesExist, err := dir.Exists()
         if err != nil {
@@ -67,6 +73,9 @@ func main() {
     log.Info("Initializing machv...")
     initializeDirectories()  // does not return errors as errors are handled inside the function
 
+
+    // developer note: yes I know this is terrible, but truly, it works...
+    // I don't think I am going to change this. Ever.
     args := os.Args[1:]
     var opt int
 

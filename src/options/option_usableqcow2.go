@@ -10,8 +10,8 @@ import (
 
 func OptionCreateNewUsableQCOW2(
     staticDir *pathlib.Path,
-    disksDir *pathlib.Path,
-) (error) {
+    disksDir  *pathlib.Path,
+) error {
     log.Info("Loading all static virtual machine disks...")
 
     disks, err := lib.ReadFilesInDirectory(staticDir)

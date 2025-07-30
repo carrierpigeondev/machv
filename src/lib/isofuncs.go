@@ -8,14 +8,11 @@ import (
     "os/exec"
 )
 
-func GetIsoPath(iso IsoEntry, isoDir *pathlib.Path) (*pathlib.Path) {
+func GetIsoPath(iso IsoEntry, isoDir *pathlib.Path) *pathlib.Path {
     return isoDir.Join(iso.FriendlyName())
 }
 
-func DownloadIso(
-    iso IsoEntry,
-    isoDir *pathlib.Path,
-) (error) {
+func DownloadIso(iso IsoEntry, isoDir *pathlib.Path) error {
     curlCmdString := fmt.Sprintf("curl -LO %v", iso.Url)
 
     log.WithField("command", curlCmdString).

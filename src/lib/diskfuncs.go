@@ -9,7 +9,7 @@ import (
     "os/exec"
 )
 
-func CreateDiskPath(fileName string, directory *pathlib.Path) (*pathlib.Path) {
+func CreateDiskPath(fileName string, directory *pathlib.Path) *pathlib.Path {
     if !strings.HasSuffix(fileName, ".qcow2") {
         fileName = strings.Join([]string{ fileName, ".qcow2" }, "")
     }
@@ -19,7 +19,7 @@ func CreateDiskPath(fileName string, directory *pathlib.Path) (*pathlib.Path) {
 
 func CreateStaticQCOW2(
     diskPath *pathlib.Path,
-    sizeMiB int,
+    sizeMiB  int,
 ) (*pathlib.Path, error) {
     qemuImgCmdString := fmt.Sprintf(
         "qemu-img create -f qcow2 %v %vM",
@@ -43,7 +43,7 @@ func CreateStaticQCOW2(
 func CreateUsableQCOW2(
     staticDiskPath *pathlib.Path,
     usableDiskPath *pathlib.Path,
-) (error) {
+) error {
     if _, err := staticDiskPath.Copy(usableDiskPath); err != nil {
         return fmt.Errorf("copying static to usable disk path: %w", err)
     }

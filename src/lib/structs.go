@@ -12,7 +12,7 @@ type IsoEntry struct {
     Url  string
 }
 
-func (iso IsoEntry) FriendlyName() (string) {
+func (iso IsoEntry) FriendlyName() string {
     name := strings.Split(iso.Url, "/")
 
     if len(name) > 0 {

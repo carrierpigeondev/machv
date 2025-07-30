@@ -5,7 +5,7 @@ import (
     "github.com/chigopher/pathlib"
 )
 
-func ParseIsoTomlToIsoEntrySlice(isoTomlPath *pathlib.Path) ([]IsoEntry, error) {
+func ParseIsoToml(isoTomlPath *pathlib.Path) ([]IsoEntry, error) {
     tomlFile, err := isoTomlPath.Open()
     if err != nil {
         return nil, err

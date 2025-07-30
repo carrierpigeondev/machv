@@ -12,11 +12,11 @@ import (
 )
 
 func OptionCreateNewStaticQCOW2(
-    staticDir *pathlib.Path,
+    staticDir   *pathlib.Path,
     isoTomlPath *pathlib.Path,
-    isoDir *pathlib.Path,
+    isoDir      *pathlib.Path,
 ) (error) {
-    allIsos, err := lib.ParseIsoTomlToIsoEntrySlice(isoTomlPath)
+    allIsos, err := lib.ParseIsoToml(isoTomlPath)
     if err != nil {
         return fmt.Errorf("parsing %v to entries: %w", isoTomlPath, err)
     }
@@ -51,21 +51,26 @@ func OptionCreateNewStaticQCOW2(
         return fmt.Errorf("creating static qcwo2: %w", err)
     }
 
-    _createVM(staticDiskPath, isoPath)
+    if err := _createVM(staticDiskPath, isoPath); err != nil {
+        return fmt.Errorf("creating vm: %w", err)
+    }
 
     return nil
 }
 
-
-func _createVM(uniqueDiskPath *pathlib.Path, isoPath *pathlib.Path) {
+func _createVM(uniqueDiskPath *pathlib.Path, isoPath *pathlib.Path) (error) {
     log.WithField("isoPath", isoPath).Info("::LOOK::")
-    qemuCreateCmd := fmt.Sprintf("qemu-system-x86_64 %v -hda %v -boot d -cdrom %v", lib.QemuGlobalArgs, uniqueDiskPath, isoPath)
+    qemuCreateCmd := fmt.Sprintf(
+        "qemu-system-x86_64 %v -hda %v -boot d -cdrom %v",
+        lib.QemuGlobalArgs, uniqueDiskPath, isoPath)
     log.WithField("isoPath", qemuCreateCmd).Info("::LOOK::")
     cmd := exec.Command("bash", "-c", qemuCreateCmd)
     cmd.Stderr = os.Stderr
     cmd.Stdout = os.Stdout
     cmd.Stdin = os.Stdin
     if err := cmd.Run(); err != nil {
-        log.WithError(err).Fatal("A fatal error has occurred while running qemu-system-x86_64")
+        return fmt.Errorf("running qemu-system-x86_64: %w", err)
     }
+    
+    return nil
 }

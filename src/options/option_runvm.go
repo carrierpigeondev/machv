@@ -13,9 +13,9 @@ import (
 )
 
 func OptionLaunchVirtualMachineFromUsableQCOW2(
-    disksDir *pathlib.Path,
+    disksDir  *pathlib.Path,
     sharePath *pathlib.Path,
-) (error) {
+) error {
     log.Info("Loading all usable virtual machine disks...")
 
     selectedDiskPath, err := _selectUsableDiskPath(disksDir)
@@ -86,8 +86,8 @@ func _addSpiceArgs(extraArgs string) (string, error) {
 
 func _addExtraArgs(
     promptText string,
-    args string,
-    extraArgs string,
+    args       string,
+    extraArgs  string,
 ) (string, error) {
     lib.DisplayBool(promptText)
     runWithSpice, err := lib.SelectBool()
@@ -100,7 +100,7 @@ func _addExtraArgs(
     return args, nil
 }
 
-func _launchVM(diskPath *pathlib.Path, extraArgs string) (error) {
+func _launchVM(diskPath *pathlib.Path, extraArgs string) error {
     qemuRunCmd := fmt.Sprintf(
         "qemu-system-x86_64 -%v -hda %v -boot a %v",
         lib.QemuGlobalArgs, diskPath, extraArgs,
